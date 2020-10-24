@@ -4,6 +4,7 @@
 
 import requests
 import json
+from math import log10
 import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.ticker as ticker
@@ -11,7 +12,7 @@ import matplotlib.ticker as ticker
 # TODO: Improve data acquision time
 # TODO: Get last date from file / records
 # TODO Plot: Add smoothing
-# TODO Plot: Plot deaths as negative numbers
+# TODO Plot: Improve calculation of tick locations
 # TODO: Calculate CFR
 # TODO: Calculate per capita cases
 # TODO API: Get data by age (RKI needed)
@@ -73,24 +74,26 @@ class CovidData:
     def plot_histo(self):
         cases = np.array(list(reversed([r['Fälle'] for r in self.records])))
         deaths = np.array(list(reversed([r['Todesfälle'] for r in self.records])))
-        deaths = (-1)*deaths
+        deaths = (-1) * deaths
         
-        # set different scaling for negative axis
+        # scale the negative y-axis
         _, ax = plt.subplots()
         forward, inverse = get_scale(a=10)
         ax.set_yscale('function', functions=(forward, inverse))
         
-        plt.plot(cases, label='Fälle')
+        plt.plot(cases, label='Aufgezeichnete Fälle')
         plt.plot(deaths, label='Todesfälle (Skala beachten)')
         plt.xlabel('Tage seit Beginn der Aufzeichnung')
         plt.ylabel('Anzahl')
         plt.legend()
 
         # set yticks
-        locs_positive = list(range(0, max(cases), int(max(cases)/10)))
-        locs_negative = list(range(0, min(deaths), int(min(deaths)/3)))
-        plt.yticks(locs_negative + locs_positive[1:])
-        #ax.yaxis.set_major_locator(ticker.MultipleLocator(300))
+        digits_pos = int(log10(max(cases)))
+        digits_neg = int(log10((-1) * min(deaths)))
+        locs_pos = list(range(0, max(cases), 10**(digits_pos-1)))
+        locs_neg = list(range(0, min(deaths), (-1) * 10**(digits_neg)))
+        plt.yticks(locs_neg + locs_pos[1:])
+
         plt.show()
 
 
