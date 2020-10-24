@@ -6,6 +6,7 @@ import requests
 import json
 import numpy as np
 from matplotlib import pyplot as plt
+import matplotlib.ticker as ticker
 
 # TODO: Improve data acquision time
 # TODO: Get last date from file / records
@@ -69,35 +70,40 @@ class CovidData:
             print(key, '=', value, end='   ')
         print('\n%d Einträge vorhanden' % (len(self.records)))
 
-    def plot_histo_alt(self):
-        #print(json.dumps(self.records[:5], indent=4))
-        cases = np.array(list(reversed([r['Fälle'] for r in self.records])))
-        deaths = np.array(list(reversed([r['Todesfälle'] for r in self.records])))
-        deaths = (-1)*deaths
-        
-        _, ax1 = plt.subplots()
-        ax2 = ax1.twinx()
-        ax1.plot(cases, 'b')
-        ax2.plot(deaths, 'g')
-        
-        ax1.set_xlabel('Tage seit Beginn der Aufzeichnung')
-        ax1.set_ylabel('Fälle', color='b')
-        ax2.set_ylabel('Todesfälle', color='g')
-        
-        ymin2 = ax2.get_ylim()[0]  # use default for lower ylimit
-        ax2.set_ylim(ymin2, max(deaths)*3)  # scale upper ylimit by hand
-        plt.show()
-
     def plot_histo(self):
         cases = np.array(list(reversed([r['Fälle'] for r in self.records])))
         deaths = np.array(list(reversed([r['Todesfälle'] for r in self.records])))
         deaths = (-1)*deaths
         
-        plt.plot(cases)
-        plt.plot(deaths)
+        # set different scaling for negative axis
+        _, ax = plt.subplots()
+        forward, inverse = get_scale(a=10)
+        ax.set_yscale('function', functions=(forward, inverse))
+        
+        plt.plot(cases, label='Fälle')
+        plt.plot(deaths, label='Todesfälle (Skala beachten)')
         plt.xlabel('Tage seit Beginn der Aufzeichnung')
         plt.ylabel('Anzahl')
+        plt.legend()
+
+        # set yticks
+        locs_positive = list(range(0, max(cases), int(max(cases)/10)))
+        locs_negative = list(range(0, min(deaths), int(min(deaths)/3)))
+        plt.yticks(locs_negative + locs_positive[1:])
+        #ax.yaxis.set_major_locator(ticker.MultipleLocator(300))
         plt.show()
+
+
+def get_scale(a=1):  # a is the scale of your negative axis
+    def forward(x):
+        x = (x >= 0) * x + (x < 0) * x * a
+        return x
+
+    def inverse(x):
+        x = (x >= 0) * x + (x < 0) * x / a
+        return x
+
+    return forward, inverse
 
 
 cd = CovidData('ECDC', send_request=False)
