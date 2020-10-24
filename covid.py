@@ -68,11 +68,12 @@ class CovidData:
             self.records = [r for r in self.records if r[key]==value]
             print(key, '=', value, end='   ')
         print('\n%d Einträge vorhanden' % (len(self.records)))
-    
-    def plot_histo(self):
+
+    def plot_histo_alt(self):
         #print(json.dumps(self.records[:5], indent=4))
         cases = np.array(list(reversed([r['Fälle'] for r in self.records])))
         deaths = np.array(list(reversed([r['Todesfälle'] for r in self.records])))
+        deaths = (-1)*deaths
         
         _, ax1 = plt.subplots()
         ax2 = ax1.twinx()
@@ -85,6 +86,17 @@ class CovidData:
         
         ymin2 = ax2.get_ylim()[0]  # use default for lower ylimit
         ax2.set_ylim(ymin2, max(deaths)*3)  # scale upper ylimit by hand
+        plt.show()
+
+    def plot_histo(self):
+        cases = np.array(list(reversed([r['Fälle'] for r in self.records])))
+        deaths = np.array(list(reversed([r['Todesfälle'] for r in self.records])))
+        deaths = (-1)*deaths
+        
+        plt.plot(cases)
+        plt.plot(deaths)
+        plt.xlabel('Tage seit Beginn der Aufzeichnung')
+        plt.ylabel('Anzahl')
         plt.show()
 
 
